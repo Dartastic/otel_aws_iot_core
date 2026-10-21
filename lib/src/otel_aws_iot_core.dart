@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_aws_iot_core_suppression.dart';
 
 class AwsIoTCoreResult {
+  /// Creates a result.
   const AwsIoTCoreResult({
     this.thingName,
     this.thingArn,
@@ -37,8 +38,13 @@ class AwsIoTCoreResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class AwsIoTCoreCallResult<T> {
+  /// Creates a call result.
   const AwsIoTCoreCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final AwsIoTCoreResult? result;
 }
@@ -46,78 +52,81 @@ class AwsIoTCoreCallResult<T> {
 Future<T> tracedAwsIoTCore<T>({
   required String operation,
   required Future<AwsIoTCoreCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (awsIoTCoreInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_aws_iot_core');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_aws_iot_core');
   final span = t.startSpan('iot $operation', kind: SpanKind.client);
   try {
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'aws-api')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.system', 'aws-api')]));
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.service', 'IoT')]));
-    span.addAttributes(
-        OTel.attributes([OTel.attributeString('messaging.system', 'aws_iot')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.service', 'IoT')]));
+    span.addAttributes(OTelAPI.attributes(
+        [OTelAPI.attributeString('messaging.system', 'aws_iot')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.thingName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('iot.thing.name', res.thingName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('iot.thing.name', res.thingName!)]));
       }
       if (res.thingArn != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('iot.thing.arn', res.thingArn!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('iot.thing.arn', res.thingArn!)]));
       }
       if (res.thingType != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('iot.thing.type', res.thingType!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('iot.thing.type', res.thingType!)]));
       }
       if (res.clientId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('messaging.client_id', res.clientId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('messaging.client_id', res.clientId!)]));
       }
       if (res.topic != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('messaging.destination.name', res.topic!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('messaging.destination.name', res.topic!)
+        ]));
       }
       if (res.ruleName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('aws.iot.rule.name', res.ruleName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('aws.iot.rule.name', res.ruleName!)]));
       }
       if (res.jobId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('aws.iot.job.id', res.jobId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('aws.iot.job.id', res.jobId!)]));
       }
       if (res.shadowName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('aws.iot.shadow.name', res.shadowName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('aws.iot.shadow.name', res.shadowName!)]));
       }
       if (res.qos != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('messaging.kafka.message.priority', res.qos!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('messaging.kafka.message.priority', res.qos!)
+        ]));
       }
       if (res.region != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('cloud.region', res.region!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('cloud.region', res.region!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('iot.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('iot.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'iot.error',
           )
         ]));

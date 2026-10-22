@@ -2,7 +2,7 @@ name: otel_aws_iot_core
 description: >-
   OpenTelemetry instrumentation for aws_iot_core by Dartastic.io. Adds
   standard OpenTelemetry observability to applications that use aws_iot_core.
-version: 0.1.0
+version: 0.1.1-wip
 repository: https://github.com/dartastic/otel_aws_iot_core
 homepage: https://dartastic.io
 
